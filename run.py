@@ -36,7 +36,7 @@ def main():
     argp.add_argument('--task', type=str, choices=['nli', 'qa'], required=True,
                       help="""This argument specifies which task to train/evaluate on.
         Pass "nli" for natural language inference or "qa" for question answering.
-        By default, "nli" will use the MNLI dataset, and "qa" will use the SQuAD dataset.""")
+        By default, "nli" will use the SNLI dataset, and "qa" will use the SQuAD dataset.""")
     argp.add_argument('--dataset', type=str, default=None,
                       help="""This argument overrides the default dataset used for the specified task.""")
     argp.add_argument('--max_length', type=int, default=128,
