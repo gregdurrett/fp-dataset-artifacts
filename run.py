@@ -121,10 +121,19 @@ def main():
         trainer_class = QuestionAnsweringTrainer
         eval_kwargs['eval_examples'] = eval_dataset
         metric = datasets.load_metric('squad')
-        compute_metrics = lambda eval_pred: metric.compute(
-            predictions=eval_pred.predictions, references=eval_pred.label_ids)
+        compute_metrics = lambda eval_preds: metric.compute(
+            predictions=eval_preds.predictions, references=eval_preds.label_ids)
     elif args.task == 'nli':
         compute_metrics = compute_accuracy
+    
+
+    # This function wraps the compute_metrics function, storing the model's predictions
+    # so that they can be dumped along with the computed metrics
+    eval_predictions = None
+    def compute_metrics_and_store_predictions(eval_preds):
+        nonlocal eval_predictions
+        eval_predictions = eval_preds
+        return compute_metrics(eval_preds)
 
     # Initialize the Trainer object with the specified arguments and the model and dataset we loaded above
     trainer = trainer_class(
@@ -133,7 +142,7 @@ def main():
         train_dataset=train_dataset_featurized,
         eval_dataset=eval_dataset_featurized,
         tokenizer=tokenizer,
-        compute_metrics=compute_metrics
+        compute_metrics=compute_metrics_and_store_predictions
     )
     # Train and/or evaluate
     if training_args.do_train:
@@ -148,17 +157,37 @@ def main():
 
     if training_args.do_eval:
         results = trainer.evaluate(**eval_kwargs)
-        print('Evaluation results:')
-        print(results)
-        os.makedirs(training_args.output_dir, exist_ok=True)
-        with open(os.path.join(training_args.output_dir, 'eval_metrics.json'), encoding='utf-8', mode='w') as f:
-            json.dump(results, f)
-        # To add custom metrics, you should replace the "compute_metrics" argument to the Trainer (see comments above).
+
+        # To add custom metrics, you should replace the "compute_metrics" function (see comments above).
         #
         # If you want to change how predictions are computed, you should subclass Trainer and override the "prediction_step"
         # method (see https://huggingface.co/transformers/_modules/transformers/trainer.html#Trainer.prediction_step).
         # If you do this your custom prediction_step should probably start by calling super().prediction_step and modifying the
         # values that it returns.
+
+        print('Evaluation results:')
+        print(results)
+
+        os.makedirs(training_args.output_dir, exist_ok=True)
+
+        with open(os.path.join(training_args.output_dir, 'eval_metrics.json'), encoding='utf-8', mode='w') as f:
+            json.dump(results, f)
+
+        with open(os.path.join(training_args.output_dir, 'eval_predictions.jsonl'), encoding='utf-8', mode='w') as f:
+            if args.task == 'qa':
+                predictions_by_id = {pred['id']: pred['prediction_text'] for pred in eval_predictions.predictions}
+                for example in eval_dataset:
+                    example_with_prediction = dict(example)
+                    example_with_prediction['predicted_answer'] = predictions_by_id[example['id']]
+                    f.write(json.dumps(example_with_prediction))
+                    f.write('\n')
+            else:
+                for i, example in enumerate(eval_dataset):
+                    example_with_prediction = dict(example)
+                    example_with_prediction['predicted_scores'] = eval_predictions.predictions[i].tolist()
+                    example_with_prediction['predicted_label'] = int(eval_predictions.predictions[i].argmax())
+                    f.write(json.dumps(example_with_prediction))
+                    f.write('\n')
 
 
 if __name__ == "__main__":
