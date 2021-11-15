@@ -3,12 +3,16 @@
 Project by Kaj Bostrom, Jifan Chen, and Greg Durrett. Code by Kaj Bostrom and Jifan Chen.
 
 ## Getting Started
-You'll need Python >= 3.8 to run the code in this repo.
+You'll need Python >= 3.6 to run the code in this repo.
 
 First, clone the repository:
+
 `git clone git@github.com:gregdurrett/fp-dataset-artifacts.git`
 
-Install the dependencies:
+Then install the dependencies:
+
+`pip install --upgrade pip`
+
 `pip install -r requirements.txt`
 
 If you're running on a shared machine and don't have the privileges to install Python packages globally,
