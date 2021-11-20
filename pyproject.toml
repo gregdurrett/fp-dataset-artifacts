@@ -11,6 +11,7 @@ openai = "^0.11.0"
 
 [tool.poetry.dev-dependencies]
 black = "^21.11b1"
+jupyterlab = "^3.2.4"
 
 [tool.black]
 line-length = 79
