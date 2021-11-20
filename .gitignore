@@ -1,3 +1,4 @@
 *.pyc
 output/
 .env
+notebooks/.ipynb_checkpoints/
