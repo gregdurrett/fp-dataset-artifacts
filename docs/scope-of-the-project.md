@@ -63,3 +63,20 @@ It doesn't looks like there's a way to batch the input, so it might take quite s
 
 There are parameters such as `Max tokens`, `temperature`, `Top p`, `Frequency`, etc. We aren't sure what the best values are for these hyperparameters just yet.
 
+## Getting Started with API
+
+We use the example prompt provided by OpenAI for Q&A to evalute the GPT3 models against the suggested datasets (SQuAD and HotpotQA).
+
+The naive approach of simply copying and pasting the question doesn't work well. The models does answer the question correctly, but the response is ususally in complete sentence whereas the dataset expects a simplest answer.
+
+Also, the example prompt doesn't have a way of providing a context, so this needs to be modified with some data points from the datasets to introduce context to the prompt.
+- This requires using model tokens, so eventually, it might be beneficial to fine tune the model, so that we don't have to provide examples.
+
+Without fine-tuning or prompt engineering, the model refuse to generate any text.
+
+## Q&A vs NLI
+
+Q&A presents a challenge due to the greater degree of freedom in terms of what's expected as an output. It makes it harder to evaluate because the response could be very close to right but different enough that it's not easy to say whether the model got it right or not.
+
+NLI on the other hand is much simpler. The model can only respond with neutral, entailment, and contradtiction. This makes it much easier to evaluate and establish certain baseline and develop a proof of concept.
+
