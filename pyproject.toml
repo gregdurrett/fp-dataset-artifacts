@@ -5,19 +5,21 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.7.1,<3.11"
-numpy = "^1.21.4"
+python = ">=3.9,<3.11"
+numpy = "1.21.2"
 openai = "^0.11.0"
+datasets = "^1.15.1"
 
 [tool.poetry.dev-dependencies]
 black = "^21.11b1"
 jupyterlab = "^3.2.4"
 python-dotenv = "^0.19.2"
+ipywidgets = "^7.6.5"
 
 [tool.black]
 line-length = 79
 skip-string-normalization = true
-target-version = ['py37']
+target-version = ['py39']
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
