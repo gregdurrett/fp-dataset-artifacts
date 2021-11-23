@@ -15,6 +15,7 @@ black = "^21.11b1"
 jupyterlab = "^3.2.4"
 python-dotenv = "^0.19.2"
 ipywidgets = "^7.6.5"
+ipython = "^7.29.0"
 
 [tool.black]
 line-length = 79
