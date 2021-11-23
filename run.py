@@ -50,15 +50,25 @@ def main():
     training_args, args = argp.parse_args_into_dataclasses()
 
     # Dataset selection
-    default_datasets = {'qa': ('squad',), 'nli': ('snli',)}
-    dataset_id = tuple(args.dataset.split(':')) if args.dataset is not None else \
-        default_datasets[args.task]
+    if args.dataset.endswith('.json') or args.dataset.endswith('.jsonl'):
+        dataset_id = None
+        # Load from local json/jsonl file
+        dataset = datasets.load_dataset('json', data_files=args.dataset)
+        # By default, the "json" dataset loader places all examples in the train split,
+        # so if we want to use a jsonl file for evaluation we need to get the "train" split
+        # from the loaded dataset
+        eval_split = 'train'
+    else:
+        default_datasets = {'qa': ('squad',), 'nli': ('snli',)}
+        dataset_id = tuple(args.dataset.split(':')) if args.dataset is not None else \
+            default_datasets[args.task]
+        # MNLI has two validation splits (one with matched domains and one with mismatched domains). Most datasets just have one "validation" split
+        eval_split = 'validation_matched' if dataset_id == ('glue', 'mnli') else 'validation'
+        # Load the raw data
+        dataset = datasets.load_dataset(*dataset_id)
+    
     # NLI models need to have the output label count specified (label 0 is "entailed", 1 is "neutral", and 2 is "contradiction")
     task_kwargs = {'num_labels': 3} if args.task == 'nli' else {}
-    # MNLI has two validation splits (one with matched domains and one with mismatched domains). Most datasets just have one "validation" split
-    eval_split = 'validation_matched' if dataset_id == ('glue', 'mnli') else 'validation'
-    # Load the raw data
-    dataset = datasets.load_dataset(*dataset_id)
 
     # Here we select the right model fine-tuning head
     model_classes = {'qa': AutoModelForQuestionAnswering,
