@@ -80,3 +80,53 @@ Q&A presents a challenge due to the greater degree of freedom in terms of what's
 
 NLI on the other hand is much simpler. The model can only respond with neutral, entailment, and contradtiction. This makes it much easier to evaluate and establish certain baseline and develop a proof of concept.
 
+## Issues with NLI
+
+Based on some experiments with SNLI on text completion, it seems like the model fails to predict the label for some unknown reason.
+
+Given a prompt such as:
+
+```
+This is a textual entailment classifier that detemines the inference relation between premise and hypothesis with the labels: entailment, contradiction, or neutral.
+
+premise: A person on a horse jumps over a broken down airplane.
+hypothesis: A person is training his horse for a competition.
+label: neutral
+
+premise: An older man sits with his orange juice at a small table in a coffee shop while employees in bright colored shirts smile in the background.
+hypothesis: A boy flips a burger.
+label: contradiction
+
+premise: A woman is walking across the street eating a banana, while a man is following with his briefcase.
+hypothesis: the woman is a seductress
+label: neutral
+
+premise: People on bicycles waiting at an intersection.
+hypothesis: There is a bike race happening right now.
+label: neutral
+
+premise: A foreign family is walking along a dirt path next to the water.
+hypothesis: A family of foreigners walks by the water.
+label: entailment
+
+premise: A guy performing a bicycle jump trick for an audience.
+hypothesis: tony hawk is performing a skating trick
+label: contradiction
+
+premise: Children smiling and waving at camera
+hypothesis: There are children present
+label: 
+```
+
+The model with `max_tokens=100` produces:
+```
+
+
+premise: Girls sitting at outdoor tea area talking excitedly, one pointing empty tea cup at each other, another reading tea card.
+label: 
+
+There are three strategies for evaluating w-ETT accuracy, knowledge transfer, logical validity, and RPSL compliance. The lack of ground truth in visual reasoning makes evaluation difficult, but since all proposed models derive their inference representation from the premises, they are using the same representations. The major challenge in evaluating w-ETT
+```
+
+We might have to start using classification or fine tuning to get actual results.
+
