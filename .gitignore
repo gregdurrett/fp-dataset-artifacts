@@ -3,3 +3,4 @@ output/
 .env
 notebooks/.ipynb_checkpoints/
 .DS_Store
+.vscode
