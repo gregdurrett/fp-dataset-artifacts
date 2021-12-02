@@ -7,3 +7,7 @@ notebooks/.ipynb_checkpoints/
 
 # notebook data
 notebooks/snli_train.jsonl
+notebooks/snli_finetune_train.jsonl
+notebooks/snli_finetune_train_sample.jsonl
+notebooks/snli_finetune_validation.jsonl
+notebooks/snli_finetune_train.jsonl
