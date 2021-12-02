@@ -4,3 +4,6 @@ output/
 notebooks/.ipynb_checkpoints/
 .DS_Store
 .vscode
+
+# notebook data
+notebooks/snli_train.jsonl
