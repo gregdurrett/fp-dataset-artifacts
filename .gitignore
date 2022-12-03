@@ -1,2 +1,11 @@
 *.pyc
-output/
+output*/
+.ipynb_checkpoints/
+.vscode/
+env/
+checklist*
+latex/
+FinalProject*.ipynb
+Untitled*.ipynb
+__pycache__*
+340-acl2019-latex.zip

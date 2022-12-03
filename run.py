@@ -1,10 +1,15 @@
 import datasets
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, \
-    AutoModelForQuestionAnswering, Trainer, TrainingArguments, HfArgumentParser
-from helpers import prepare_dataset_nli, prepare_train_dataset_qa, \
-    prepare_validation_dataset_qa, QuestionAnsweringTrainer, compute_accuracy
-import os
 import json
+import os
+
+from transformers import (AutoTokenizer, AutoModelForSequenceClassification,
+                          AutoModelForQuestionAnswering, Trainer, TrainingArguments,
+                          HfArgumentParser)
+
+from helpers import (prepare_dataset_nli, prepare_dataset_pnli, prepare_train_dataset_qa,
+                     prepare_validation_dataset_qa, QuestionAnsweringTrainer, compute_accuracy,
+                     compute_pnli_accuracy)
+from custom_electra import CustomElectraForSequenceClassification
 
 NUM_PREPROCESSING_WORKERS = 2
 
@@ -33,9 +38,10 @@ def main():
                       help="""This argument specifies the base model to fine-tune.
         This should either be a HuggingFace model ID (see https://huggingface.co/models)
         or a path to a saved model checkpoint (a folder containing config.json and pytorch_model.bin).""")
-    argp.add_argument('--task', type=str, choices=['nli', 'qa'], required=True,
+    argp.add_argument('--task', type=str, choices=['nli', 'qa', 'pnli'], required=True,
                       help="""This argument specifies which task to train/evaluate on.
-        Pass "nli" for natural language inference or "qa" for question answering.
+        Pass "nli" for natural language inference, "qa" for question answering, or "pnli" for probability distribution
+        base natural language inference.
         By default, "nli" will use the SNLI dataset, and "qa" will use the SQuAD dataset.""")
     argp.add_argument('--dataset', type=str, default=None,
                       help="""This argument overrides the default dataset used for the specified task.""")
@@ -46,36 +52,36 @@ def main():
                       help='Limit the number of examples to train on.')
     argp.add_argument('--max_eval_samples', type=int, default=None,
                       help='Limit the number of examples to evaluate on.')
+    argp.add_argument('--train_dataset', type=str, default='train',
+                      help='Which dataset to use for training. Allows for using the test dataset for fine tuning')
+    argp.add_argument('--num_classes', type=int, default=3,
+                      help='Number of classes')
 
     training_args, args = argp.parse_args_into_dataclasses()
 
-    # Dataset selection
-    if args.dataset.endswith('.json') or args.dataset.endswith('.jsonl'):
-        dataset_id = None
-        # Load from local json/jsonl file
-        dataset = datasets.load_dataset('json', data_files=args.dataset)
-        # By default, the "json" dataset loader places all examples in the train split,
-        # so if we want to use a jsonl file for evaluation we need to get the "train" split
-        # from the loaded dataset
-        eval_split = 'train'
-    else:
-        default_datasets = {'qa': ('squad',), 'nli': ('snli',)}
-        dataset_id = tuple(args.dataset.split(':')) if args.dataset is not None else \
-            default_datasets[args.task]
-        # MNLI has two validation splits (one with matched domains and one with mismatched domains). Most datasets just have one "validation" split
-        eval_split = 'validation_matched' if dataset_id == ('glue', 'mnli') else 'validation'
-        # Load the raw data
-        dataset = datasets.load_dataset(*dataset_id)
+    dataset_id = None
+    # Load from local json/jsonl file
+    dataset = datasets.load_dataset('json', data_files=args.dataset)
+    # By default, the "json" dataset loader places all examples in the train split,
+    # so if we want to use a jsonl file for evaluation we need to get the "train" split
+    # from the loaded dataset
+    eval_split = 'train'
     
     # NLI models need to have the output label count specified (label 0 is "entailed", 1 is "neutral", and 2 is "contradiction")
-    task_kwargs = {'num_labels': 3} if args.task == 'nli' else {}
+    task_kwargs = {'num_labels': int(args.num_classes)} if args.task == 'nli' else {}
 
     # Here we select the right model fine-tuning head
-    model_classes = {'qa': AutoModelForQuestionAnswering,
-                     'nli': AutoModelForSequenceClassification}
-    model_class = model_classes[args.task]
-    # Initialize the model and tokenizer from the specified pretrained model/checkpoint
-    model = model_class.from_pretrained(args.model, **task_kwargs)
+
+    # for pnli, use the custom electra model with modified loss function
+    if args.task == 'pnli':
+        model = CustomElectraForSequenceClassification.from_pretrained(args.model, **task_kwargs)
+    else:
+        model_classes = {'qa': AutoModelForQuestionAnswering,
+                         'nli': AutoModelForSequenceClassification}
+        model_class = model_classes[args.task]
+        # Initialize the model and tokenizer from the specified pretrained model/checkpoint
+        model = model_class.from_pretrained(args.model, **task_kwargs)
+
     tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True)
 
     # Select the dataset preprocessing function (these functions are defined in helpers.py)
@@ -85,7 +91,9 @@ def main():
     elif args.task == 'nli':
         prepare_train_dataset = prepare_eval_dataset = \
             lambda exs: prepare_dataset_nli(exs, tokenizer, args.max_length)
-        # prepare_eval_dataset = prepare_dataset_nli
+    elif args.task == 'pnli':
+        prepare_train_dataset = prepare_eval_dataset = \
+            lambda exs: prepare_dataset_pnli(exs, tokenizer, args.max_length)
     else:
         raise ValueError('Unrecognized task name: {}'.format(args.task))
 
@@ -100,6 +108,7 @@ def main():
     eval_dataset_featurized = None
     if training_args.do_train:
         train_dataset = dataset['train']
+
         if args.max_train_samples:
             train_dataset = train_dataset.select(range(args.max_train_samples))
         train_dataset_featurized = train_dataset.map(
@@ -135,6 +144,8 @@ def main():
             predictions=eval_preds.predictions, references=eval_preds.label_ids)
     elif args.task == 'nli':
         compute_metrics = compute_accuracy
+    elif args.task == 'pnli':
+        compute_metrics = compute_pnli_accuracy
     
 
     # This function wraps the compute_metrics function, storing the model's predictions
