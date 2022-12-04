@@ -4,8 +4,16 @@ output*/
 .vscode/
 env/
 checklist*
-latex/
+latex/*.aux
+latex/*.bbl
+latex/*.blg
+latex/*.fdb_latexmk
+latex/*.fls
+latex/*.log
+latex/*.out
+latex/*.synctex.gz
 FinalProject*.ipynb
 Untitled*.ipynb
 __pycache__*
 340-acl2019-latex.zip
+junk
