@@ -1,4 +1,4 @@
 transformers==4.23.0
-datasets==2.6.1
+datasets==2.10.0
 tqdm
 torch
