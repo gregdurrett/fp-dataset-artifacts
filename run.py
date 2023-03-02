@@ -50,6 +50,10 @@ def main():
     training_args, args = argp.parse_args_into_dataclasses()
 
     # Dataset selection
+    # IMPORTANT: this code path allows you to load custom datasets different from the standard SQuAD or SNLI ones.
+    # You need to format the dataset appropriately. For SNLI, you can prepare a file with each line containing one
+    # example as follows:
+    # {"premise": "Two women are embracing.", "hypothesis": "The sisters are hugging.", "label": 1}
     if args.dataset.endswith('.json') or args.dataset.endswith('.jsonl'):
         dataset_id = None
         # Load from local json/jsonl file
