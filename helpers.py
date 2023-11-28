@@ -1,8 +1,6 @@
 import numpy as np
 import collections
-from collections import defaultdict, OrderedDict
 from transformers import Trainer, EvalPrediction
-from transformers.trainer_utils import PredictionOutput
 from typing import Tuple
 from tqdm.auto import tqdm
 
